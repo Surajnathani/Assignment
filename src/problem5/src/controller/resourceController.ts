@@ -1,81 +1,69 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
+import { catchAsync } from "../utils/catchAsync";
+import { AppError } from "../middleware/errorHandler";
 import Resource from "../models/resource";
 
-export const createResource = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
+export const createResource = catchAsync(
+  async (req: Request, res: Response) => {
     const resource = await Resource.create(req.body);
-    res.status(201).json(resource);
-  } catch (error) {
-    next(error);
+    res.status(201).json({
+      status: "success",
+      data: resource,
+    });
   }
-};
+);
 
-export const getResources = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const resources = await Resource.find(req.query);
-    res.status(200).json(resources);
-  } catch (error) {
-    next(error);
+export const getResources = catchAsync(async (req: Request, res: Response) => {
+  const resources = await Resource.find(req.query);
+  res.status(200).json({
+    status: "success",
+    results: resources.length,
+    data: resources,
+  });
+});
+
+export const getResource = catchAsync(async (req: Request, res: Response) => {
+  const resource = await Resource.findById(req.params.id);
+
+  if (!resource) {
+    throw new AppError("Resource not found", 404);
   }
-};
 
-export const getResource = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const resource = await Resource.findById(req.params.id);
-    if (!resource) {
-      res.status(404).json({ message: "Resource not found" });
-      return;
-    }
-    res.status(200).json(resource);
-  } catch (error) {
-    next(error);
-  }
-};
+  res.status(200).json({
+    status: "success",
+    data: resource,
+  });
+});
 
-export const updateResource = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
+export const updateResource = catchAsync(
+  async (req: Request, res: Response) => {
     const resource = await Resource.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
+      runValidators: true,
     });
-    if (!resource) {
-      res.status(404).json({ message: "Resource not found" });
-      return;
-    }
-    res.status(200).json(resource);
-  } catch (error) {
-    next(error);
-  }
-};
 
-export const deleteResource = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const resource = await Resource.findByIdAndDelete(req.params.id);
     if (!resource) {
-      res.status(404).json({ message: "Resource not found" });
-      return;
+      throw new AppError("Resource not found", 404);
     }
-    res.status(200).json({ message: "Resource deleted successfully" });
-  } catch (error) {
-    next(error);
+
+    res.status(200).json({
+      status: "success",
+      data: resource,
+    });
   }
-};
+);
+
+export const deleteResource = catchAsync(
+  async (req: Request, res: Response) => {
+    const resource = await Resource.findByIdAndDelete(req.params.id);
+
+    if (!resource) {
+      throw new AppError("Resource not found", 404);
+    }
+
+    res.status(200).json({
+      status: "success",
+      message: "Resource deleted successfully",
+    });
+  }
+);
